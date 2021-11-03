@@ -55,6 +55,7 @@ class HPCDatastoreDescription(object):
 					channel_res=1.0, channel_unit="channel",
 					angle_res=1.0, angle_unit="deg", resolution_levels=1,
 					block_dimensions=(64,64,64),compression="gzip", 
+					transformations=None,
 					json_objects=None):
 				
 		if voxel_type in VOXEL_TYPES:
@@ -62,9 +63,7 @@ class HPCDatastoreDescription(object):
 		else:
 			raise Exception("Voxel type %s not found" % voxel_type)
 
-		if json_objects is not None:
-			self.__dict__ = json_objects
-		else:
+		if json_objects is None:
 			self.timepoints = timepoints
 			self.channels = channels
 			self.angles = angles
@@ -112,6 +111,10 @@ class HPCDatastoreDescription(object):
 						block_dimensions[1], block_dimensions[2])
 				})
 			self.resolutionLevels =  rl_entries
+			self.versions = [0]
+			self.transformations = transformations
+		else:
+			self.__dict__ = json_objects
 		
 	@staticmethod
 	def load_json(data):
