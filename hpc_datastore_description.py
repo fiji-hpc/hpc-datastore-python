@@ -7,9 +7,8 @@ from types import FunctionType
 import json
 
 VOXEL_TYPES = ["uint8", "uint16", "uint32", "uint64","int8", "int16", "int32", "int64", "float32", "float64"]
-VOXEL_UNITS = ["nm", "um", "mm","cm", "dm", "m", "km"]
+#VOXEL_UNITS = ["nm", "microns", "um", "mm","cm", "dm", "m", "km"]
 COMPRESSIONS = ["none", "raw", "gzip"] # Is "raw" OK and how it differs from none?
-
 
 def adjust_range(v, min_value=1, max_value=None, datatype=int):
 	"""Helper function to adjust a variable range and convert it to datatype
@@ -42,8 +41,9 @@ def xyz_value(x, y, z, min_value=1, max_value=None, datatype=int):
 	"""
 
 	return [ adjust_range(x, min_value, max_value, datatype),
-				adjust_range(y, min_value, max_value, datatype),
-				adjust_range(z, min_value, max_value, datatype)]
+			 adjust_range(y, min_value, max_value, datatype),
+			 adjust_range(z, min_value, max_value, datatype)
+			]
 
 
 class HPCDatastoreDescription(object):
@@ -68,22 +68,22 @@ class HPCDatastoreDescription(object):
 			self.channels = channels
 			self.angles = angles
 
-			if voxel_unit == "microns" :
-				self.voxelUnit = "um" 	 # Library compatibility
-			elif voxel_unit in VOXEL_UNITS:
-				self.voxelUnit=voxel_unit # Name has to keep JSON compatibility
-			else:
-				raise Exception("Voxel unit %s not found" % voxel_unit)
+			#if voxel_unit in VOXEL_UNITS: # No check is really needed
+			self.voxelUnit=voxel_unit
+			#else:
+			#	raise Exception("Voxel unit %s not found" % voxel_unit)
 
 			if compression in COMPRESSIONS:
 				self.compression=compression
 			else:
 				raise Exception("Compression type %s not found" % compression)
 
-			self.dimensions = xyz_value(dimensions[0], dimensions[1], dimensions[2])
+			self.dimensions = xyz_value(dimensions[0], dimensions[1],
+										dimensions[2])
 
 			self.voxelResolution = xyz_value(voxel_resolutions[0],
-				voxel_resolutions[1], voxel_resolutions[2], 0.0, datatype=float)
+				voxel_resolutions[1], voxel_resolutions[2], 0.0,
+				datatype=float)
 
 			self.timepointResolution = {
 				"value" : adjust_range(time_res, 0, datatype=float),
