@@ -2,23 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
+from hpc_ds_types import *
+from hpc_ds_desc import HPCDatastoreDescription
+from dataset_client import DatasetServerClient
+from regserv_client import RegisterServiceClient
+from time import time
 import requests
-from hpc_datastore_description import HPCDatastoreDescription
-
-class Access(Enum):
-    READ=1
-    WRITE=2
-    READ_WRITE=3
-
-DS_PATH= '/datasets'
-
-class InvalidDatasetException(Exception):
-	pass
-
-
-class HPCRepositoryAccessException(Exception):
-	pass
-
 
 class HPCDatastoreRepository(object):
 	"""HPC Datastore Repository representation"""
@@ -98,15 +87,15 @@ class HPCDatastoreRepository(object):
 
 class HPCDatastoreClient(object):
 	"""HPC Datastore client implementation in Python 3"""
-	
+
 	def __init__(self, server_url="http://localhost:9080", dataset_path=None,
-					access_regime = Access.READ, credentials=None):
+					access_regime = DatastoreAccess.READ, credentials=None):
 		"""Initializes the Data Store connection
 
 		:type dataset_path: str
 		:param dataset_path: Identity of the datastore (UUID)
 
-		:type access_regime: Access
+		:type access_regime: DatasetAccess
 		:param access_regime: Access regime to the datastore - R/W/RW
 
 		:type server_url: str
@@ -117,16 +106,44 @@ class HPCDatastoreClient(object):
 		"""
 		
 		self.access_regime = access_regime
-		#self.credentials = credentials
+		self.credentials = credentials
 		#self.server_url = server_url
 		self.repository = HPCDatastoreRepository(server_url, dataset_path,
 							credentials)
+
+		#Running Data Store servers
+		self.ds_servers = dict()
 
 	def load_description(self):
 		json_objects=self.repository.retrieve()
 		#print(json_objects)
 		self.ds_description = HPCDatastoreDescription(json_objects=json_objects)
 	
+	def start_dataset_server(resolutions, access_regime = None,
+									version="latest", timeout=10000)
+		"""Open dataset server for limited time to work with slices
+
+		:type resolutions: Point3D
+		:param server_url: (X,Y,Z) tuple representing the resolution levels
+		       from HPCDatastoreDescription on individual axes
+
+		:type access_regime: DatastoreAccess
+		:param access_regime: Access regime to the datastore - R/W/RW.
+				None will result in the default access regime being used.
+
+		:type version: str
+		:param version: Name of the version (may be number, latest, ...)
+
+		:type timeout: int
+		:param timeout: Timeout of Service Client instance in ms
+		"""
+		if access_regime is None:
+			access_regime = self.access_regime
+
+		ds_regserv = RegisterServiceClient(self.repository.get_base_url(),
+					access_regime, resolutions, version, timeout,
+					self.credentials)
+
 	def __str__(self):
 		out_s = ""
 		for k in self.__dict__:

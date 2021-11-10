@@ -3,58 +3,23 @@
 
 from enum import Enum
 from types import SimpleNamespace
-from types import FunctionType
+from hpc_ds_types import Point3D, adjust_range
 import json
 
 VOXEL_TYPES = ["uint8", "uint16", "uint32", "uint64","int8", "int16", "int32", "int64", "float32", "float64"]
 #VOXEL_UNITS = ["nm", "microns", "um", "mm","cm", "dm", "m", "km"]
 COMPRESSIONS = ["none", "raw", "gzip"] # Is "raw" OK and how it differs from none?
 
-def adjust_range(v, min_value=1, max_value=None, datatype=int):
-	"""Helper function to adjust a variable range and convert it to datatype
-    :param v: Adjusted variable
-
-    :type min_value: float
-    :param min_value: Minimum value of v
-
-    :type max_value: float
-    :param max_value: Maximum value of v
-
-    :type datatype: object
-    :param datatype: ob
-
-    :type credentials: object
-    :param credentials: Future access credentials, set to None for now
-	"""
-
-	if min_value is not None and v < min_value:
-		v = min_value
-	elif max_value is not None and v > max_value:
-		v = max_value
-	if datatype is not None and isinstance(datatype, FunctionType):
-		v = datatype(v)
-	return v
-
-def xyz_value(x, y, z, min_value=1, max_value=None, datatype=int):
-	"""Helper function conveting values in 3 dimensions taking into
-	account the data types, minimum and maximum values
-	"""
-
-	return [ adjust_range(x, min_value, max_value, datatype),
-			 adjust_range(y, min_value, max_value, datatype),
-			 adjust_range(z, min_value, max_value, datatype)
-			]
-
-
 class HPCDatastoreDescription(object):
 	"""Datastore metadata object"""
 
-	def __init__(self, dimensions=(1,1,1), timepoints=1, channels=1, angles=1,
-					voxel_type="uint16", voxel_resolutions=(1,1,1),
+	def __init__(self, dimensions=Point3D(1,1,1), timepoints=1, channels=1,
+					angles=1, voxel_type="uint16",
+					voxel_resolutions=Point3D(1,1,1),
 					voxel_unit="um", time_res=1.0, time_unit ="seconds",
 					channel_res=1.0, channel_unit="channel",
 					angle_res=1.0, angle_unit="deg", resolution_levels=1,
-					block_dimensions=(64,64,64),compression="gzip",
+					block_dimensions=Point3D(64,64,64),compression="gzip",
 					transformations=None,
 					json_objects=None):
 
@@ -78,12 +43,10 @@ class HPCDatastoreDescription(object):
 			else:
 				raise Exception("Compression type %s not found" % compression)
 
-			self.dimensions = xyz_value(dimensions[0], dimensions[1],
-										dimensions[2])
+			self.dimensions = Point3D.adjust_range(dimensions)
 
-			self.voxelResolution = xyz_value(voxel_resolutions[0],
-				voxel_resolutions[1], voxel_resolutions[2], 0.0,
-				datatype=float)
+			self.voxelResolution = Point3D.adjust_range(voxel_resolutions,
+				0.0,  datatype=float)
 
 			self.timepointResolution = {
 				"value" : adjust_range(time_res, 0, datatype=float),
@@ -107,8 +70,7 @@ class HPCDatastoreDescription(object):
 				level_v = 1 << level;
 				rl_entries.append({
 					"resolutions" : [level_v, level_v, level_v],
-					"blockDimensions" : xyz_value(block_dimensions[0],
-						block_dimensions[1], block_dimensions[2])
+					"blockDimensions" : Point3D.adjust_range(block_dimensions)
 				})
 			self.resolutionLevels =  rl_entries
 			#self.versions = [0]
