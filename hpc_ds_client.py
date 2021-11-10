@@ -13,7 +13,8 @@ class HPCDatastoreRepository(object):
 	"""HPC Datastore Repository representation"""
 
 	data_headers = {
-		'Content-Type':'application/json'
+		"json": { "Content-Type": "application/json" },
+		"string": { "Content-Type": "text/plain; charset=utf-8" }
 	}
 
 	def __init__(self, server_url, dataset_path=None, credentials=None):
@@ -35,6 +36,9 @@ class HPCDatastoreRepository(object):
 		"""Returns full datastore URL"""
 		retval = self.server_url + DS_PATH
 		if use_dataset:
+			if self.dataset_path is None:
+				raise InvalidDatasetException(
+				"No dataset path has been specified, repository metadata cannot be retreived")
 			retval += '/' + self.dataset_path
 		return retval
 
@@ -42,8 +46,8 @@ class HPCDatastoreRepository(object):
 		"""Create repository and record the server URL"""
 #		print("Request URL: %s" % self.get_base_url(False))
 		desc = requests.post(self.get_base_url(False),
-								json=datastore_description.__dict__,
-								headers=self.data_headers)
+								data=datastore_description.to_json(),
+								headers=self.data_headers["json"])
 
 		if desc is not None and int(desc.status_code / 100) == 2:
 			self.dataset_path = desc.text
@@ -54,9 +58,6 @@ class HPCDatastoreRepository(object):
 
 	def retrieve(self):
 		"""Load repository data"""
-		if self.dataset_path is None:
-			raise InvalidDatasetException(
-			"No dataset path has been specified, repository metadata cannot be retreived")
 		desc = requests.get(self.get_base_url())
 		if desc is not None and int(desc.status_code / 100) == 2:
 			return desc.json()
@@ -84,6 +85,18 @@ class HPCDatastoreRepository(object):
 #				% (deleted_dataset_path, desc.status_code))
 		return False
 
+	def get_common_metadata(self):
+		"""Get N5 metadata from repository"""
+		result = requests.get(self.get_base_url() + "/common-metadata")
+		if result is not None and int(result.status_code / 100) == 2:
+			return result.text
+
+	def set_common_metadata(self, metadata):
+		"""Set N5 metadata to repository"""
+		result = requests.post(self.get_base_url() + "/common-metadata",
+								data=str(metadata), 
+								headers=self.data_headers["string"])
+		return result is not None and int(result.status_code / 100) == 2
 
 class HPCDatastoreClient(object):
 	"""HPC Datastore client implementation in Python 3"""
@@ -119,8 +132,8 @@ class HPCDatastoreClient(object):
 		#print(json_objects)
 		self.ds_description = HPCDatastoreDescription(json_objects=json_objects)
 	
-	def start_dataset_server(resolutions, access_regime = None,
-									version="latest", timeout=10000)
+	def start_dataset_server(resolution, access_regime=None,
+									version="latest", timeout=10000):
 		"""Open dataset server for limited time to work with slices
 
 		:type resolutions: Point3D
@@ -141,7 +154,7 @@ class HPCDatastoreClient(object):
 			access_regime = self.access_regime
 
 		ds_regserv = RegisterServiceClient(self.repository.get_base_url(),
-					access_regime, resolutions, version, timeout,
+					access_regime, resolution, version, timeout,
 					self.credentials)
 
 	def __str__(self):

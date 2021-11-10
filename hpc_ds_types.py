@@ -2,7 +2,7 @@ from collections import namedtuple
 from enum import Enum
 from types import FunctionType
 
-# Dataset path main directory on servers, it is fixed for now 
+# Dataset path main directory on servers, it is fixed for now
 DS_PATH= '/datasets'
 
 # Common Exceptions
@@ -18,16 +18,28 @@ class DataStoreAccessException(Exception):
 # Enumerations
 class DatastoreAccess(Enum):
 	""" DataStore Access Enumeration and its string interpretations"""
-	
+
 	READ=1
 	WRITE=2
 	READ_WRITE=3
-	    
+
 	def __str__(self):
 		if self == DatastoreAccess.READ_WRITE:
 			return "read-write"
-		else: 
+		else:
 			return str.lower(self.name)
+
+# Constants
+VOXEL_TYPES = ["uint8", "uint16", "uint32", "uint64","int8", "int16",
+				"int32", "int64", "float32", "float64"
+]
+
+COMPRESSIONS = ["none", "raw", "gzip"] # Is "raw" OK and how it differs from none?
+
+EXTRA_VERSIONS = ["latest", "mixedLatest" ] # Non-numeric versions
+
+#VOXEL_UNITS = ["nm", "microns", "um", "mm","cm", "dm", "m", "km"]
+# Voxel units are not checked for validity
 
 # Helper functions
 def adjust_range(v, min_value=1, max_value=None, datatype=int):
@@ -57,7 +69,7 @@ def adjust_range(v, min_value=1, max_value=None, datatype=int):
 
 # Points
 class Point3D(namedtuple('Point3D', ['x', 'y', 'z'])):
-	
+
 	@staticmethod
 	def adjust_range(xyz_source, min_value=1, max_value=None, datatype=int):
 		"""Helper static method conveting values in all 3 dimensions taking
@@ -67,8 +79,8 @@ class Point3D(namedtuple('Point3D', ['x', 'y', 'z'])):
 		return Point3D(adjust_range(x, min_value, max_value, datatype),
 			 adjust_range(y, min_value, max_value, datatype),
 			 adjust_range(z, min_value, max_value, datatype)
-		)		
-	
+		)
+
 	def adjust(self,  min_value=1, max_value=None, datatype=int):
-		"""Adjust own dimentsions""" 
+		"""Adjust own dimentsions"""
 		return Point3D.adjust_range(self, min_value, max_value, datatype)

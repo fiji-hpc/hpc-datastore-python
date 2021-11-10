@@ -3,12 +3,8 @@
 
 from enum import Enum
 from types import SimpleNamespace
-from hpc_ds_types import Point3D, adjust_range
+from hpc_ds_types import Point3D, adjust_range, COMPRESSIONS, VOXEL_TYPES, EXTRA_VERSIONS
 import json
-
-VOXEL_TYPES = ["uint8", "uint16", "uint32", "uint64","int8", "int16", "int32", "int64", "float32", "float64"]
-#VOXEL_UNITS = ["nm", "microns", "um", "mm","cm", "dm", "m", "km"]
-COMPRESSIONS = ["none", "raw", "gzip"] # Is "raw" OK and how it differs from none?
 
 class HPCDatastoreDescription(object):
 	"""Datastore metadata object"""
@@ -69,7 +65,7 @@ class HPCDatastoreDescription(object):
 			for level in range(0, resolution_levels):
 				level_v = 1 << level;
 				rl_entries.append({
-					"resolutions" : [level_v, level_v, level_v],
+					"resolutions" : Point3D(level_v, level_v, level_v),
 					"blockDimensions" : Point3D.adjust_range(block_dimensions)
 				})
 			self.resolutionLevels =  rl_entries
@@ -82,6 +78,11 @@ class HPCDatastoreDescription(object):
 	def load_json(data):
 		"""Loading of data store description data from JSON to a simple object"""
 		return json.loads(data, object_hook=lambda d: SimpleNamespace(**d))
+
+	def check_version(self, version):
+		if (versions is not None and version in versions) or (version in EXTRA_VERSIONS):
+			return True
+		return False
 
 	def from_json(self, data):
 		"""Importing data store description from JSON representation"""

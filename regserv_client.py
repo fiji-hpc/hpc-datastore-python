@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from time import time
-from hpc_ds_types import DatastoreAccess
+from hpc_ds_types import DatastoreAccess, EXTRA_VERSIONS, Point3D
 import requests
 
 class RegisterServiceClient(object):
-	def __init__(self, base_url, access_regime, resolutions=Point3D(1,1,1), 
+	def __init__(self, base_url, access_regime, resolution=Point3D(1,1,1),
 				  version="latest", timeout=10000, credentials=None):
 		"""Initialize the Register service to request service server with
 		:type base_url: str
@@ -15,9 +15,9 @@ class RegisterServiceClient(object):
 		:type access_regime: DatastoreAccess
 		:param access_regime: Access regime to the datastore - R/W/RW
 
-		:type resolutions: Point3D
-		:param server_url: (X,Y,Z) tuple representing the resolution levels 
-		       from HPCDatastoreDescription 
+		:type resolution: Point3D
+		:param server_url: (X,Y,Z) tuple representing the resolution levels
+		       from HPCDatastoreDescription
 
 		:type version: str
 		:param version: Name of the version (may be number, latest, ...)
@@ -31,15 +31,22 @@ class RegisterServiceClient(object):
 		self.base_url = base_url
 		if not isinstance(access_regime, DatastoreAccess):
 			raise DataStoreAccessException(
-			   "Invalid access regime %s, use DatastoreAccess enum values",
-			   str(access_regime))
+			   "Invalid access regime \"%s\", use DatastoreAccess enum values"
+			   % str(access_regime))
+		if not isinstance(version, int) and not version in EXTRA_VERSIONS:
+			raise DataStoreAccessException(
+				"Invalid datastore version string \"%s\"" % str(version))
+
 		self.access_regime = access_regime
 		self.version = version
-		self.resolutions = resolutions
+		self.resolution = resolution
 		self.credentials = credentials
-		
+
 	def start(self):
+		"""Opens connection to the server"""
 		self.expires = int(time() * 1000) + self.timeout
-		
-		
-		
+
+	def rebuild(self, resolutions=[Point3D(1,1,1)]):
+		"""Rebuilds data for specified resolutions from base data"""
+		for resolution in resolutions:
+			pass
