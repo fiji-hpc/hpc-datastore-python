@@ -110,6 +110,16 @@ class HPCDatastoreRepository(object):
 								headers=self.data_headers["json"])
 		return result is not None and int(result.status_code / 100) == 2
 
+	def rebuild(self, resolutions=[Point3D(1,1,1)]):
+		"""Rebuilds data for specified resolutions from base data"""
+		self.assert_dataset_ready(self.dataset_path)
+		res_url = Point3D(1,1,1).to_ds_URL_component() # From doc, otherwise ""
+		for resolution in resolutions:
+			res_url += Point3D.to_ds_URL_component(resolution)
+		result = requests.get(self.get_base_url() + res_url + "/rebuild")
+		return result is not None and int(result.status_code / 100) == 2
+
+
 class HPCDatastoreClient(object):
 	"""HPC Datastore client implementation in Python 3"""
 

@@ -84,3 +84,9 @@ class Point3D(namedtuple('Point3D', ['x', 'y', 'z'])):
 	def adjust(self,  min_value=1, max_value=None, datatype=int):
 		"""Adjust own dimentsions"""
 		return Point3D.adjust_range(self, min_value, max_value, datatype)
+
+	def to_ds_URL_component(self):
+		res=''
+		for x in self:
+			res += '/' + str(x)
+		return res

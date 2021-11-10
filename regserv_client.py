@@ -46,7 +46,3 @@ class RegisterServiceClient(object):
 		"""Opens connection to the server"""
 		self.expires = int(time() * 1000) + self.timeout
 
-	def rebuild(self, resolutions=[Point3D(1,1,1)]):
-		"""Rebuilds data for specified resolutions from base data"""
-		for resolution in resolutions:
-			pass
