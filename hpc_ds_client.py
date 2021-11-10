@@ -32,19 +32,23 @@ class HPCDatastoreRepository(object):
 		self.dataset_path = dataset_path
 		self.credentials = credentials
 
+	def assert_dataset_ready(self, dataset_path):
+		if dataset_path is None:
+			raise InvalidDatasetException(
+			"No dataset path has been specified, repository cannot be accessed")
+
 	def get_base_url(self, use_dataset=True):
 		"""Returns full datastore URL"""
 		retval = self.server_url + DS_PATH
 		if use_dataset:
-			if self.dataset_path is None:
-				raise InvalidDatasetException(
-				"No dataset path has been specified, repository metadata cannot be retreived")
+			self.assert_dataset_ready(self.dataset_path)
 			retval += '/' + self.dataset_path
 		return retval
 
 	def create(self, datastore_description):
 		"""Create repository and record the server URL"""
 #		print("Request URL: %s" % self.get_base_url(False))
+		self.assert_dataset_ready(self.dataset_path)
 		desc = requests.post(self.get_base_url(False),
 								data=datastore_description.to_json(),
 								headers=self.data_headers["json"])
@@ -69,9 +73,7 @@ class HPCDatastoreRepository(object):
 
 	def delete(self, deleted_dataset_path): # =self.dataset_path):
 		# Argument forced to rather not to prevent deleting used datasets
-		if deleted_dataset_path is None:
-			raise InvalidDatasetException(
-			"No dataset path has been specified, repository metadata cannot be retreived")
+		self.assert_dataset_ready(deleted_dataset_path)
 		desc = requests.delete(self.get_base_url(False) + '/' + deleted_dataset_path)
 		if desc is not None and int(desc.status_code / 100) == 2:
 			if deleted_dataset_path == self.dataset_path: self.dataset_path = None
@@ -87,15 +89,25 @@ class HPCDatastoreRepository(object):
 
 	def get_common_metadata(self):
 		"""Get N5 metadata from repository"""
+		self.assert_dataset_ready(self.dataset_path)
 		result = requests.get(self.get_base_url() + "/common-metadata")
 		if result is not None and int(result.status_code / 100) == 2:
 			return result.text
 
 	def set_common_metadata(self, metadata):
 		"""Set N5 metadata to repository"""
+		self.assert_dataset_ready(self.dataset_path)
 		result = requests.post(self.get_base_url() + "/common-metadata",
 								data=str(metadata), 
 								headers=self.data_headers["string"])
+		return result is not None and int(result.status_code / 100) == 2
+
+	def add_channels(self, count):
+		"""Add extra channels"""
+		self.assert_dataset_ready(self.dataset_path)
+		result = requests.post(self.get_base_url() + "/channels",
+								data=str(count),
+								headers=self.data_headers["json"])
 		return result is not None and int(result.status_code / 100) == 2
 
 class HPCDatastoreClient(object):
