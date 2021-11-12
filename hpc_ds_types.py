@@ -39,6 +39,8 @@ COMPRESSIONS = ["none", "raw", "gzip"] # Is "raw" OK and how it differs from non
 
 EXTRA_VERSIONS = ["latest", "mixedLatest" ] # Non-numeric versions
 
+MAX_URL_LEN = 2000 # Theoretically up to 2048, but let's keep some reserve
+
 #VOXEL_UNITS = ["nm", "microns", "um", "mm","cm", "dm", "m", "km"]
 # Voxel units are not checked for validity
 
@@ -90,4 +92,12 @@ class Point3D(namedtuple('Point3D', ['x', 'y', 'z'])):
 		res=''
 		for x in self:
 			res += '/' + str(x)
-		return res
+		return res[1:]
+
+class Block5D(namedtuple('Block5D', Point3D._fields + ('time', 'channel', 'angle'))):
+
+	def to_ds_url_part(self):
+		res=''
+		for x in self:
+			res += '/' + str(x)
+		return res[1:]

@@ -29,6 +29,8 @@ class RegisterServiceClient(object):
 		:type credentials: object
 		:param credentials: Future access credentials, set to None for now
 		"""
+		if base_url[-1] != '/':
+			base_url += '/'
 		self.base_url = base_url
 		if not isinstance(access_regime, DatastoreAccess):
 			raise DataStoreAccessException(

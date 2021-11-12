@@ -98,7 +98,7 @@ class HPCDatastoreRepository(object):
 		"""Set N5 metadata to repository"""
 		self.assert_dataset_ready(self.dataset_path)
 		result = requests.post(self.get_base_url() + "/common-metadata",
-								data=str(metadata), 
+								data=str(metadata),
 								headers=self.data_headers["string"])
 		return result is not None and int(result.status_code / 100) == 2
 
@@ -139,7 +139,7 @@ class HPCDatastoreClient(object):
 		:type credentials: object
 		:param credentials: Future access credentials, set to None for now
 		"""
-		
+
 		self.access_regime = access_regime
 		self.credentials = credentials
 		#self.server_url = server_url
@@ -153,13 +153,13 @@ class HPCDatastoreClient(object):
 		json_objects=self.repository.retrieve()
 		#print(json_objects)
 		self.ds_description = HPCDatastoreDescription(json_objects=json_objects)
-	
+
 	def start_dataset_server(self, resolution, access_regime=None,
 									version="latest", timeout=15000):
 		"""Open dataset server for limited time to work with slices and
 		returns object which is representing it
 
-		:type resolutions: Point3D
+		:type resolutions: ``Point3D``
 		:param server_url: (X,Y,Z) tuple representing the resolution levels
 		       from HPCDatastoreDescription on individual axes
 
@@ -172,9 +172,15 @@ class HPCDatastoreClient(object):
 
 		:type timeout: int
 		:param timeout: Timeout of Service Client instance in ms
+
+		:rtype: ``DatasetServerClient``
+		:return: A new or already running instance of ``DatasetServerClient``
 		"""
 		if access_regime is None:
 			access_regime = self.access_regime
+
+		if self.ds_description is None:
+			self.load_description()
 
 		ds_regserv = RegisterServiceClient(self.repository.get_base_url(),
 					access_regime, resolution, version, timeout,
@@ -188,6 +194,8 @@ class HPCDatastoreClient(object):
 		else:
 			ds_regserv.start()
 			self.ds_servers[ds_id] = ds_regserv
+			ds_regserv.client.voxel_type = self.ds_description.voxelType
+
 		return ds_regserv.client
 
 	def __str__(self):
