@@ -4,8 +4,8 @@
 from enum import Enum
 from hpc_ds_types import *
 from hpc_ds_desc import HPCDatastoreDescription
-from dataset_client import DatasetServerClient
-from regserv_client import RegisterServiceClient
+from hpc_ds_dsclient import DatasetServerClient
+from hpc_ds_reg_client import RegisterServiceClient
 from time import time
 import requests
 
@@ -113,9 +113,9 @@ class HPCDatastoreRepository(object):
 	def rebuild(self, resolutions=[Point3D(1,1,1)]):
 		"""Rebuilds data for specified resolutions from base data"""
 		self.assert_dataset_ready(self.dataset_path)
-		res_url = Point3D(1,1,1).to_ds_URL_component() # From doc, otherwise ""
+		res_url = Point3D(1,1,1).to_ds_url_part() # From doc, otherwise ""
 		for resolution in resolutions:
-			res_url += Point3D.to_ds_URL_component(resolution)
+			res_url += Point3D.to_ds_url_part(resolution)
 		result = requests.get(self.get_base_url() + res_url + "/rebuild")
 		return result is not None and int(result.status_code / 100) == 2
 
@@ -154,9 +154,10 @@ class HPCDatastoreClient(object):
 		#print(json_objects)
 		self.ds_description = HPCDatastoreDescription(json_objects=json_objects)
 	
-	def start_dataset_server(resolution, access_regime=None,
-									version="latest", timeout=10000):
-		"""Open dataset server for limited time to work with slices
+	def start_dataset_server(self, resolution, access_regime=None,
+									version="latest", timeout=15000):
+		"""Open dataset server for limited time to work with slices and
+		returns object which is representing it
 
 		:type resolutions: Point3D
 		:param server_url: (X,Y,Z) tuple representing the resolution levels
@@ -178,6 +179,16 @@ class HPCDatastoreClient(object):
 		ds_regserv = RegisterServiceClient(self.repository.get_base_url(),
 					access_regime, resolution, version, timeout,
 					self.credentials)
+
+		ds_id=ds_regserv.to_url()
+		if ds_id in self.ds_servers \
+		  and (self.ds_servers[ds_id].expires is None \
+				or self.ds_servers[ds_id].expires > time()):
+			ds_regserv = self.ds_servers[ds_id]
+		else:
+			ds_regserv.start()
+			self.ds_servers[ds_id] = ds_regserv
+		return ds_regserv.client
 
 	def __str__(self):
 		out_s = ""

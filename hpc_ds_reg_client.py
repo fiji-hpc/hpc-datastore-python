@@ -3,6 +3,7 @@
 
 from time import time
 from hpc_ds_types import DatastoreAccess, EXTRA_VERSIONS, Point3D
+from hpc_ds_dsclient import DatasetServerClient
 import requests
 
 class RegisterServiceClient(object):
@@ -10,7 +11,7 @@ class RegisterServiceClient(object):
 				  version="latest", timeout=10000, credentials=None):
 		"""Initialize the Register service to request service server with
 		:type base_url: str
-		:param base_url: Full URL path to the datastore instance
+		:param base_url: Full url path to the datastore instance
 
 		:type access_regime: DatastoreAccess
 		:param access_regime: Access regime to the datastore - R/W/RW
@@ -41,8 +42,32 @@ class RegisterServiceClient(object):
 		self.version = version
 		self.resolution = resolution
 		self.credentials = credentials
+		if timeout is not None and int(timeout) > 0:
+			self.timeout = int(timeout)
+		else:
+			self.timeout = None
+
+	def to_url(self, use_timeout=True):
+		retval = self.base_url + Point3D.to_ds_url_part(self.resolution) \
+			+ '/' + str(self.version) + '/' + str(self.access_regime)
+		if use_timeout and self.timeout is not None:
+			retval += "?timeout="  + str(self.timeout)
+		return retval
 
 	def start(self):
 		"""Opens connection to the server"""
-		self.expires = int(time() * 1000) + self.timeout
-
+		if self.timeout:
+			self.expires = (int(time() * 1000) + self.timeout) / 1000
+		else:
+			self.expires = None
+		#print(self.to_url())
+		result = requests.get(self.to_url(), allow_redirects=False)
+		if result is not None and int(result.status_code) == 307:
+			self.client = DatasetServerClient(result.headers['Location'], self)
+			#print('Result: ' + str(result.status_code) + '\n'
+			#		+ 'Answer: ' +  result.text + '\n'
+			#		+ 'New server: ' + result.headers['Location'])
+		else:
+			raise HPCRepositoryAccessException(
+			"Register Service did not start a new server, HTTP error %i"
+				% result.status_code)

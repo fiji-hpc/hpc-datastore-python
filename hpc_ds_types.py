@@ -30,9 +30,10 @@ class DatastoreAccess(Enum):
 			return str.lower(self.name)
 
 # Constants
-VOXEL_TYPES = ["uint8", "uint16", "uint32", "uint64","int8", "int16",
-				"int32", "int64", "float32", "float64"
-]
+VOXEL_TYPES = {"uint8" : 'B', "uint16" : 'H', "uint32" : 'L', "uint64" : 'Q',
+				"int8" : 'b', "int16" : 'h', "int32" : 'l', "int64" : 'q',
+				"float32" : 'f', "float64" : 'd'
+}
 
 COMPRESSIONS = ["none", "raw", "gzip"] # Is "raw" OK and how it differs from none?
 
@@ -85,7 +86,7 @@ class Point3D(namedtuple('Point3D', ['x', 'y', 'z'])):
 		"""Adjust own dimentsions"""
 		return Point3D.adjust_range(self, min_value, max_value, datatype)
 
-	def to_ds_URL_component(self):
+	def to_ds_url_part(self):
 		res=''
 		for x in self:
 			res += '/' + str(x)
