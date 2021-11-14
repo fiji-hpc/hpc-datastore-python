@@ -149,7 +149,7 @@ class DatasetServerClient(object):
 					url = url2
 					ids += [item]
 					count = count+1
-				print(url, count, str(ids))
+				#print(url, count, str(ids))
 				result = requests.get(url[:-1])
 				if result is not None and int(result.status_code / 100) == 2:
 					all_data=result.content
