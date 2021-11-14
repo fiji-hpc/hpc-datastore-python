@@ -82,7 +82,7 @@ class DatasetServerClient(object):
 			(x,y,z,time, channel, angle)
 
 		:rtype: tuple
-        :return: A tuple with data and ``Point3D`` representing its sizes
+		:return: A tuple with data and ``Point3D`` representing its sizes
 		"""
 
 		if not self.can_read:
@@ -105,6 +105,76 @@ class DatasetServerClient(object):
 										VOXEL_TYPES[self.voxel_type]), \
 									data))
 		return None
+
+	def read_blocks(self, block_coords_array):
+		"""Request a block from dataset server
+		:type block_coords_array: Block5D
+		:param block_coords_array: array or list of tuples representing
+		5D coordinates of (x,y,z,time, channel, angle)
+
+		:rtype: tuple
+		:return: tuple with a dictionary containing data for datapoints
+		and ``Point3D`` representing its sizes
+		"""
+
+		if not self.can_read:
+			raise DataStoreAccessException(
+				"Collection opened from %s is not readable"
+				% self.regs_client.to_url())
+
+		if self.block_fmt is None:
+			self.init_block_fmt()
+
+		count=0
+		blocks=len(block_coords_array)
+		results = {}
+		ids = []
+
+		url = self.base_url
+		for idx in range(blocks):
+			item = block_coords_array[idx]
+			url2 = url + Block5D.to_ds_url_part(item) + '/'
+			if len(url2) < MAX_URL_LEN and idx != blocks - 1:
+				url = url2
+				ids += [item]
+				count = count+1
+				continue
+			else:
+				if idx != blocks - 1:
+					url2 = self.base_url + Block5D.to_ds_url_part(item)
+				else: # Last block has to be added to the URL
+					#TODO: We use shorter URLs, but could we get over
+					#      the maximum? Maybe rewrite with blocks+1 and
+					#      different ifs?
+					url = url2
+					ids += [item]
+					count = count+1
+				print(url, count, str(ids))
+				result = requests.get(url[:-1])
+				if result is not None and int(result.status_code / 100) == 2:
+					all_data=result.content
+					start=0
+					for i in range(count):
+						hdr=all_data[start:start+12]
+						x,y,z = struct.unpack(DatasetServerClient.header, hdr)
+						total_size = x * y * z
+						expander="!%u%s" % (total_size, \
+										VOXEL_TYPES[self.voxel_type])
+						if total_size != -1:
+							typed_size = struct.calcsize(expander)
+							next_index = typed_size + start+12
+							results[ids[i]] = (Point3D(x, y, z),
+								 struct.unpack(expander, all_data[
+								   start+12:next_index]))
+							start = next_index
+						else:
+							start += 12
+				if idx != blocks - 1:
+					count = 1
+					url = url2
+					ids = [item]
+		return results
+
 
 	def write_block(self, block_coords, data, block_sizes):
 		"""Request a block from dataset server
