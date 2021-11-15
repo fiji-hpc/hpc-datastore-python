@@ -94,7 +94,7 @@ class Point3D(namedtuple('Point3D', ['x', 'y', 'z'])):
 			res += '/' + str(x)
 		return res[1:]
 
-class Block5D(namedtuple('Block5D', Point3D._fields + ('time', 'channel', 'angle'))):
+class Block6D(namedtuple('Block6D', Point3D._fields + ('time', 'channel', 'angle'))):
 
 	def to_ds_url_part(self):
 		res=''

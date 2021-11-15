@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
-from hpc_ds_types import Point3D, Block5D, DatastoreAccess, VOXEL_TYPES, \
+from hpc_ds_types import Point3D, Block6D, DatastoreAccess, VOXEL_TYPES, \
 						MAX_URL_LEN
 
 from time import time
@@ -77,7 +77,7 @@ class DatasetServerClient(object):
 
 	def read_block(self, block_coords):
 		"""Request a block from dataset server
-		:type block_coords: Block5D
+		:type block_coords: Block6D
 		:param block_coords: Tuple representing 5D coordinates of
 			(x,y,z,time, channel, angle)
 
@@ -93,7 +93,7 @@ class DatasetServerClient(object):
 		if self.block_fmt is None:
 			self.init_block_fmt()
 
-		url = self.base_url + Block5D.to_ds_url_part(block_coords)
+		url = self.base_url + Block6D.to_ds_url_part(block_coords)
 		result = requests.get(url)
 		if result is not None and int(result.status_code / 100) == 2:
 			data=result.content
@@ -108,7 +108,7 @@ class DatasetServerClient(object):
 
 	def read_blocks(self, block_coords_array):
 		"""Request a block from dataset server
-		:type block_coords_array: Block5D
+		:type block_coords_array: Block6D
 		:param block_coords_array: array or list of tuples representing
 		5D coordinates of (x,y,z,time, channel, angle)
 
@@ -133,7 +133,7 @@ class DatasetServerClient(object):
 		url = self.base_url
 		for idx in range(blocks):
 			item = block_coords_array[idx]
-			url2 = url + Block5D.to_ds_url_part(item) + '/'
+			url2 = url + Block6D.to_ds_url_part(item) + '/'
 			if len(url2) < MAX_URL_LEN and idx != blocks - 1:
 				url = url2
 				ids += [item]
@@ -141,7 +141,7 @@ class DatasetServerClient(object):
 				continue
 			else:
 				if idx != blocks - 1:
-					url2 = self.base_url + Block5D.to_ds_url_part(item)
+					url2 = self.base_url + Block6D.to_ds_url_part(item)
 				else: # Last block has to be added to the URL
 					#TODO: We use shorter URLs, but could we get over
 					#      the maximum? Maybe rewrite with blocks+1 and
@@ -178,7 +178,7 @@ class DatasetServerClient(object):
 
 	def write_block(self, block_coords, data, block_sizes):
 		"""Request a block from dataset server
-		:type block_coords: ``Block5D``
+		:type block_coords: ``Block6D``
 		:param block_coords: Tuple representing 5D coordinates of
 			(x,y,z,time, channel, angle)
 		:type data: array
@@ -198,7 +198,7 @@ class DatasetServerClient(object):
 		total_size = block_sizes[0] * block_sizes[1] * block_sizes[2]
 		assert(len(data) == total_size)
 
-		url = self.base_url + Block5D.to_ds_url_part(block_coords)
+		url = self.base_url + Block6D.to_ds_url_part(block_coords)
 		post_data=struct.pack(self.block_fmt % total_size, block_sizes[0], \
 								block_sizes[1], block_sizes[2], data)
 		result=requests.post(url, data=post_data, headers=binary_headers)
