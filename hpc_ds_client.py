@@ -48,7 +48,6 @@ class HPCDatastoreRepository(object):
 	def create(self, datastore_description):
 		"""Create repository and record the server URL"""
 #		print("Request URL: %s" % self.get_base_url(False))
-		self.assert_dataset_ready(self.dataset_path)
 		desc = requests.post(self.get_base_url(False),
 								data=datastore_description.to_json(),
 								headers=self.data_headers["json"])
@@ -142,6 +141,7 @@ class HPCDatastoreClient(object):
 
 		self.access_regime = access_regime
 		self.credentials = credentials
+		self.ds_description = None
 		#self.server_url = server_url
 		self.repository = HPCDatastoreRepository(server_url, dataset_path,
 							credentials)
