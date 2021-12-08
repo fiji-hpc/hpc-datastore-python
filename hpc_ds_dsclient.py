@@ -200,8 +200,8 @@ class DatasetServerClient(object):
 
 		url = self.base_url + Block6D.to_ds_url_part(block_coords)
 		post_data=struct.pack(self.block_fmt % total_size, block_sizes[0], \
-								block_sizes[1], block_sizes[2], data)
-		result=requests.post(url, data=post_data, headers=binary_headers)
+								block_sizes[1], block_sizes[2], *data)
+		result=requests.post(url, data=post_data, headers=self.binary_headers)
 		return result is not None and int(result.status_code / 100) == 2
 
 
